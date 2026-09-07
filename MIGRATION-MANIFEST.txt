@@ -1,0 +1,43 @@
+TOMATITO ENFOCADO 1.0.0 — MIGRAÇÃO DE COMPATIBILIDADE
+
+Objetivo: reproduzir o comportamento atual dos 30 snippets ativos sem refatoração funcional.
+Os arquivos de includes são cópias do campo 'code' do export do Code Snippets, carregados na mesma ordem do export.
+
+ORDEM DE MIGRAÇÃO:
+01. ID 7 — CPT - Tomatito -> includes/01-cpt-tomatito.php
+02. ID 8 — Meta Boxes Sesiones -> includes/02-meta-boxes-sesiones.php
+03. ID 9 — Tomatito Dashboard -> includes/03-tomatito-dashboard.php
+04. ID 10 — Tomatito Test Query -> includes/04-tomatito-test-query.php
+05. ID 11 — Tomatito Sesiones por Proyecto -> includes/05-tomatito-sesiones-por-proyecto.php
+06. ID 12 — Focus Tomatito Enfocado -> includes/06-focus-tomatito-enfocado.php
+07. ID 13 — Tomatito Seguridad Usuarios -> includes/07-tomatito-seguridad-usuarios.php
+08. ID 15 — Tomatito Redirects -> includes/08-tomatito-redirects.php
+09. ID 16 — Tomatito - Create Table - Timers -> includes/09-tomatito-create-table-timers.php
+10. ID 18 — Tomatito - Create Table - Pomodoros -> includes/10-tomatito-create-table-pomodoros.php
+11. ID 19 — Tomatito - API - Pomodoros -> includes/11-tomatito-api-pomodoros.php
+12. ID 20 — Tomatito Pomodoros Page -> includes/12-tomatito-pomodoros-page.php
+13. ID 21 — Tomatito Landing CSS -> includes/13-tomatito-landing-css.php
+14. ID 22 — Tomatito - Create Table Temporizadores -> includes/14-tomatito-create-table-temporizadores.php
+15. ID 23 — Tomatito - API Temporizadores -> includes/15-tomatito-api-temporizadores.php
+16. ID 24 — Tomatito Temporizadores Page -> includes/16-tomatito-temporizadores-page.php
+17. ID 25 — Tomatito - Create Table Alarmas -> includes/17-tomatito-create-table-alarmas.php
+18. ID 26 — Tomatito - API Alarmas -> includes/18-tomatito-api-alarmas.php
+19. ID 27 — Tomatito Alarmas Page -> includes/19-tomatito-alarmas-page.php
+20. ID 28 — Tomatito API - Start Timer  -> includes/20-tomatito-api-start-timer.php
+21. ID 29 — Tomatito - Notifications -> includes/21-tomatito-notifications.php
+22. ID 30 — Tomatito - Login Fake -> includes/22-tomatito-login-fake.php
+23. ID 31 — Tomatito - REST Nonce -> includes/23-tomatito-rest-nonce.php
+24. ID 32 — Tomatito - API - Ajustes -> includes/24-tomatito-api-ajustes.php
+25. ID 33 — Tomatito Ajustes Page -> includes/25-tomatito-ajustes-page.php
+26. ID 34 — Tomatito - Aplicar Tema Global -> includes/26-tomatito-aplicar-tema-global.php
+27. ID 35 — Temporizadores Control Endpoints -> includes/27-temporizadores-control-endpoints.php
+28. ID 36 — Tomatito  Principal  Endpoint  -> includes/28-tomatito-principal-endpoint.php
+29. ID 38 — Tomatito Historial Completo -> includes/29-tomatito-historial-completo.php
+30. ID 39 — Habilitar Application Passwords -> includes/30-habilitar-application-passwords.php
+
+Os 4 snippets inativos do export não foram incluídos porque não fazem parte do conjunto ativo do Tomatito no momento da migração.
+
+REGRA: não alterar comportamento, banco, endpoints, shortcodes, layout ou lógica nesta versão. Melhorias ficam para versões posteriores, depois da validação da migração.
+
+
+POST-1.0.0: Mi perfil añadido como funcionalidad independiente; versión corregida 1.0.2 registra y carga el shortcode [tomatito_mi_perfil].

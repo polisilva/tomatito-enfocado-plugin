@@ -1,0 +1,29 @@
+{
+    "repository": "https://app.omkrom.com",
+    "slug": "focus",
+    "channel": "stable",
+    "default_auto_updates": "enabled",
+    "default_delay": 0,
+    "default_rollout": "all",
+    "default_percent": 100,
+    "default_rollback": "enabled",
+    "integration_profile": "omkrom",
+    "license_provider": "none",
+    "channel_beta": true,
+    "channel_alpha": true,
+    "automatic_updates": true,
+    "rollback": true,
+    "safe_updates": true,
+    "integration_version": "1.7.7",
+    "protocol_version": "2.0",
+    "capabilities": [
+        "update_detection",
+        "authorized_download",
+        "sha256",
+        "safe_update",
+        "rollback",
+        "diagnostics"
+    ],
+    "source_sha256": "be2d6e0d854a40c87acfc4dca3cb08dab8915958b39e95a5c1ad297ebdaba11c",
+    "generated_at_utc": "2026-08-12T13:15:15+00:00"
+}
