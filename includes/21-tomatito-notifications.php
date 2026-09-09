@@ -156,16 +156,26 @@ add_action( 'wp_footer', function () {
         var TOMATITO_TOMATO_IMG = '<img src="' + TOMATITO_TOMATO_URL + '" style="width:16px;height:16px;vertical-align:-3px;object-fit:contain;">';
         var tomatitoAudioUnlocked = false;
         var tomatitoAlarmAudioContext = null;
+        var tomatitoAlarmAudioElement = null;
+        var tomatitoAlarmAudioTimeout = null;
 
         function stopAlarmSiren() {
             if (tomatitoAlarmAudioContext) {
                 try { tomatitoAlarmAudioContext.close(); } catch (e) {}
                 tomatitoAlarmAudioContext = null;
             }
+            if (tomatitoAlarmAudioElement) {
+                try { tomatitoAlarmAudioElement.pause(); } catch (e) {}
+                tomatitoAlarmAudioElement = null;
+            }
+            if (tomatitoAlarmAudioTimeout) {
+                clearTimeout(tomatitoAlarmAudioTimeout);
+                tomatitoAlarmAudioTimeout = null;
+            }
         }
 
         // Som de alarme propositalmente estridente: duas frequências alternadas
-        // durante 12 segundos, para tornar o aviso impossível de ignorar.
+        // durante 45 segundos, para tornar o aviso impossível de ignorar.
         function playAlarmSiren() {
             try {
                 stopAlarmSiren();
@@ -176,7 +186,7 @@ add_action( 'wp_footer', function () {
                 tomatitoAlarmAudioContext = ctx;
                 var start = ctx.currentTime;
 
-                for (var i = 0; i < 16; i++) {
+                for (var i = 0; i < 60; i++) {
                     var oscillator = ctx.createOscillator();
                     var gain = ctx.createGain();
                     var when = start + (i * 0.75);
@@ -196,7 +206,7 @@ add_action( 'wp_footer', function () {
                     if (tomatitoAlarmAudioContext === ctx) {
                         stopAlarmSiren();
                     }
-                }, 12500);
+                }, 45500);
             } catch (e) {
                 console.warn('No fue posible reproducir la sirena de alarma:', e);
             }
@@ -234,6 +244,21 @@ add_action( 'wp_footer', function () {
                 }
 
                 var audio = new Audio(sonido === 'peeeem' ? TOMATITO_PEEEEM_URL : TOMATITO_SOUNDS_URL + sonido + '.mp3');
+
+                // Las alarmas deben sonar entre 30 y 60 segundos sin importar el
+                // sonido elegido — no solo con la sirena 'campana' de arriba. Si
+                // el archivo elegido dura menos, lo repetimos hasta completar 45s.
+                if (tipo === 'alarma') {
+                    stopAlarmSiren();
+                    audio.loop = true;
+                    tomatitoAlarmAudioElement = audio;
+                    tomatitoAlarmAudioTimeout = setTimeout(function() {
+                        if (tomatitoAlarmAudioElement === audio) {
+                            stopAlarmSiren();
+                        }
+                    }, 45000);
+                }
+
                 audio.play().catch(function(err) {
                     console.warn('Sonido bloqueado o no encontrado (' + sonido + '):', err);
                 });
@@ -495,7 +520,7 @@ window.tomatitoAlert = function(message, options) {
             if (aviso && aviso.parentNode) aviso.parentNode.removeChild(aviso);
         }
 
-        function mostrarAvisoAlarma(chave, name, time) {
+        function mostrarAvisoAlarma(chave, name, time, reminderMinutes) {
             if (document.querySelector('[data-tomatito-alarma="' + chave + '"]')) return;
 
             var overlay = document.createElement('div');
@@ -511,7 +536,8 @@ window.tomatitoAlert = function(message, options) {
 
             var message = document.createElement('div');
             message.className = 'tomatito-confirm-message';
-            message.textContent = '"' + name + '" — ' + time + '. Se repetirá cada 5 minutos hasta detenerla.';
+            var minutos = reminderMinutes || 5;
+            message.textContent = '"' + name + '" — ' + time + '. Se repetirá cada ' + minutos + ' minuto' + (minutos === 1 ? '' : 's') + ' hasta detenerla.';
 
             var actions = document.createElement('div');
             actions.className = 'tomatito-confirm-actions';
@@ -529,14 +555,15 @@ window.tomatitoAlert = function(message, options) {
         }
 
         function dispararAlarma(chave, alarma) {
+            var reminderMinutes = Number(alarma.reminder_minutes) || 5;
             playFinishSound('alarma', alarma.sound);
             window.tomatitoNotify(
                 '¡Alarma! 🔔',
                 '"' + alarma.name + '" — ' + alarma.time,
                 { icon: '🔔' }
             );
-            mostrarAvisoAlarma(chave, alarma.name, alarma.time);
-            alarmasPendentes[chave].next_reminder_at = Date.now() + (5 * 60 * 1000);
+            mostrarAvisoAlarma(chave, alarma.name, alarma.time, reminderMinutes);
+            alarmasPendentes[chave].next_reminder_at = Date.now() + (reminderMinutes * 60 * 1000);
             guardarAlarmasPendentes();
         }
 

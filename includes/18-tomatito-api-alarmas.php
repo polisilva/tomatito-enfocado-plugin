@@ -54,6 +54,39 @@ function tomatito_ensure_alarma_sound_column() {
 }
 add_action( 'init', 'tomatito_ensure_alarma_sound_column' );
 
+// ─────────────────────────────────────────────────────────────────────────────
+// MIGRAÇÃO: garante que a coluna 'reminder_minutes' existe na tabela de
+// alarmas — permite ao usuário escolher de quanto em quanto tempo a alarma
+// insiste (padrão 5 min) em vez de ficar fixo no código.
+// ─────────────────────────────────────────────────────────────────────────────
+function tomatito_ensure_alarma_reminder_minutes_column() {
+    global $wpdb;
+    $table = $wpdb->prefix . 'tomatito_alarmas';
+
+    $column_exists = $wpdb->get_var( $wpdb->prepare(
+        "SELECT COUNT(*) FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = 'reminder_minutes'",
+        DB_NAME,
+        $table
+    ) );
+
+    if ( ! $column_exists ) {
+        $wpdb->query( "ALTER TABLE $table ADD COLUMN reminder_minutes INT NULL DEFAULT 5" );
+    }
+}
+add_action( 'init', 'tomatito_ensure_alarma_reminder_minutes_column' );
+
+/** Normaliza o valor recebido do front-end: inteiro entre 1 e 120 minutos, com 5 como padrão seguro. */
+function tomatito_sanitize_reminder_minutes( $value ) {
+    if ( ! isset( $value ) || '' === $value ) {
+        return 5;
+    }
+    $minutes = (int) $value;
+    if ( $minutes < 1 )   return 1;
+    if ( $minutes > 120 ) return 120;
+    return $minutes;
+}
+
 
 add_action('rest_api_init', function () {
 
@@ -129,21 +162,22 @@ add_action('rest_api_init', function () {
                 : 'default';
 
             $wpdb->insert( $table, array(
-                'user_id'     => $user_id,
-                'name'        => sanitize_text_field( $body['name'] ),
-                'time'        => sanitize_text_field( $body['time'] ),
-                'is_active'   => isset( $body['is_active'] ) ? (int) $body['is_active'] : 1,
-                'repeat_mode' => sanitize_text_field( $body['repeat_mode'] ?? 'none' ),
-                'start_date'  => $start_date,
-                'end_date'    => $end_date,
-                'sound'       => $sound,
-                'mon'         => (int) ( $body['mon'] ?? 0 ),
-                'tue'         => (int) ( $body['tue'] ?? 0 ),
-                'wed'         => (int) ( $body['wed'] ?? 0 ),
-                'thu'         => (int) ( $body['thu'] ?? 0 ),
-                'fri'         => (int) ( $body['fri'] ?? 0 ),
-                'sat'         => (int) ( $body['sat'] ?? 0 ),
-                'sun'         => (int) ( $body['sun'] ?? 0 ),
+                'user_id'          => $user_id,
+                'name'             => sanitize_text_field( $body['name'] ),
+                'time'             => sanitize_text_field( $body['time'] ),
+                'is_active'        => isset( $body['is_active'] ) ? (int) $body['is_active'] : 1,
+                'repeat_mode'      => sanitize_text_field( $body['repeat_mode'] ?? 'none' ),
+                'start_date'       => $start_date,
+                'end_date'         => $end_date,
+                'sound'            => $sound,
+                'reminder_minutes' => tomatito_sanitize_reminder_minutes( $body['reminder_minutes'] ?? null ),
+                'mon'              => (int) ( $body['mon'] ?? 0 ),
+                'tue'              => (int) ( $body['tue'] ?? 0 ),
+                'wed'              => (int) ( $body['wed'] ?? 0 ),
+                'thu'              => (int) ( $body['thu'] ?? 0 ),
+                'fri'              => (int) ( $body['fri'] ?? 0 ),
+                'sat'              => (int) ( $body['sat'] ?? 0 ),
+                'sun'              => (int) ( $body['sun'] ?? 0 ),
             ));
 
             $id  = $wpdb->insert_id;
@@ -200,13 +234,14 @@ add_action('rest_api_init', function () {
                 : 'default';
 
             $wpdb->update( $table, array(
-                'name'        => sanitize_text_field( $body['name'] ?? '' ),
-                'time'        => sanitize_text_field( $body['time'] ?? '07:00:00' ),
-                'is_active'   => (int) ( $body['is_active'] ?? 1 ),
-                'repeat_mode' => sanitize_text_field( $body['repeat_mode'] ?? 'none' ),
-                'start_date'  => $start_date,
-                'end_date'    => $end_date,
-                'sound'       => $sound,
+                'name'             => sanitize_text_field( $body['name'] ?? '' ),
+                'time'             => sanitize_text_field( $body['time'] ?? '07:00:00' ),
+                'is_active'        => (int) ( $body['is_active'] ?? 1 ),
+                'repeat_mode'      => sanitize_text_field( $body['repeat_mode'] ?? 'none' ),
+                'start_date'       => $start_date,
+                'end_date'         => $end_date,
+                'sound'            => $sound,
+                'reminder_minutes' => tomatito_sanitize_reminder_minutes( $body['reminder_minutes'] ?? null ),
                 'mon'         => (int) ( $body['mon'] ?? 0 ),
                 'tue'         => (int) ( $body['tue'] ?? 0 ),
                 'wed'         => (int) ( $body['wed'] ?? 0 ),
@@ -299,13 +334,13 @@ add_action('rest_api_init', function () {
             $today    = current_time( 'Y-m-d' );
 
             $rows = $wpdb->get_results( $wpdb->prepare(
-                "SELECT id, name, time, repeat_mode, sound
+                "SELECT id, name, time, repeat_mode, sound, reminder_minutes
                  FROM $table
                  WHERE user_id   = %d
                    AND is_active = 1
                    AND ( start_date IS NULL OR start_date <= %s )
                    AND ( end_date IS NULL OR end_date >= %s )
-                 ORDER BY 
+                 ORDER BY
                      CASE WHEN time >= %s THEN 0 ELSE 1 END,
                      time ASC
                  LIMIT 3",
@@ -322,10 +357,11 @@ add_action('rest_api_init', function () {
                 $hhmm = substr( $row['time'], 0, 5 );
 
 				$output[] = array(
-					'id'    => (int) $row['id'],
-					'name'  => $row['name'],
-					'time'  => $hhmm,
-					'sound' => $row['sound'],
+					'id'               => (int) $row['id'],
+					'name'             => $row['name'],
+					'time'             => $hhmm,
+					'sound'            => $row['sound'],
+					'reminder_minutes' => (int) ( $row['reminder_minutes'] ?: 5 ),
 				);
 					}
 

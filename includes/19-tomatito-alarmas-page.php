@@ -865,6 +865,18 @@ function tomatito_alarmas_shortcode() {
                         </div>
                     </div>
 
+                    <div class="form-group">
+                        <label>Recordar cada <small style="font-weight:400;color:#9ca3af;">(mientras no la detengas)</small></label>
+                        <select id="field-reminder-minutes">
+                            <option value="5">5 minutos</option>
+                            <option value="10">10 minutos</option>
+                            <option value="15">15 minutos</option>
+                            <option value="20">20 minutos</option>
+                            <option value="30">30 minutos</option>
+                            <option value="60">60 minutos</option>
+                        </select>
+                    </div>
+
                     <div class="form-actions">
                         <button class="btn-launch" id="btn-save-alarma">Guardar Alarma</button>
                         <button class="btn-secondary" id="btn-cancel-alarma">Cancelar</button>
@@ -1192,6 +1204,7 @@ async function loadAlarmas() {
             document.getElementById('field-start-date').value  = alarma.start_date || '';
             document.getElementById('field-end-date').value    = alarma.end_date || '';
             document.getElementById('field-sound').value       = alarma.sound || 'default';
+            document.getElementById('field-reminder-minutes').value = alarma.reminder_minutes || 5;
 
             // Marca os dias custom
             ['mon','tue','wed','thu','fri','sat','sun'].forEach(day => {
@@ -1213,6 +1226,7 @@ async function loadAlarmas() {
             document.getElementById('field-start-date').value  = '';
             document.getElementById('field-end-date').value    = '';
             document.getElementById('field-sound').value       = 'default';
+            document.getElementById('field-reminder-minutes').value = 5;
 
             // Limpa os dias
             document.querySelectorAll('.day-btn').forEach(btn => {
@@ -1336,13 +1350,14 @@ async function loadAlarmas() {
         });
 
         const data = {
-            name:        document.getElementById('field-name').value.trim(),
-            time:        document.getElementById('field-time').value + ':00', // adiciona segundos
-            repeat_mode: document.getElementById('field-repeat-mode').value,
-            start_date:  document.getElementById('field-start-date').value || null,
-            end_date:    document.getElementById('field-end-date').value || null,
-            sound:       document.getElementById('field-sound').value,
-            is_active:   1,
+            name:             document.getElementById('field-name').value.trim(),
+            time:             document.getElementById('field-time').value + ':00', // adiciona segundos
+            repeat_mode:      document.getElementById('field-repeat-mode').value,
+            start_date:       document.getElementById('field-start-date').value || null,
+            end_date:         document.getElementById('field-end-date').value || null,
+            sound:            document.getElementById('field-sound').value,
+            reminder_minutes: parseInt(document.getElementById('field-reminder-minutes').value, 10) || 5,
+            is_active:        1,
             ...days,
         };
 

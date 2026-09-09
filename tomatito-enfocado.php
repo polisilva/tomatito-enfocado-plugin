@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Tomatito Enfocado
  * Description: Migração de compatibilidade do Tomatito Enfocado a partir dos snippets atuais. Mantém a lógica e a ordem de carregamento dos snippets.
- * Version: 1.0.56
+ * Version: 1.0.59
  * Author: Tomatito Enfocado
  * Requires at least: 6.0
  * Requires PHP: 8.2
@@ -57,7 +57,8 @@ $tomatito_enfocado_files = array(
     '29-tomatito-historial-completo.php',
     '30-habilitar-application-passwords.php',
     '31-tomatito-mi-perfil.php',
-    '32-tomatito-anuncios.php'
+    '32-tomatito-anuncios.php',
+    '33-tomatito-api-cuenta-movil.php'
 );
 
 foreach ($tomatito_enfocado_files as $tomatito_file) {
