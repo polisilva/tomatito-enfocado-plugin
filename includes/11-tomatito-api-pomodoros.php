@@ -228,6 +228,30 @@ add_action('rest_api_init', function () {
                 return array( 'success' => false, 'message' => 'Pomodoro no encontrado' );
             }
 
+            // ⚠️ EVITA DUPLICADOS: si ESTE pomodoro específico ya tiene un
+            // timer en marcha (running o paused), no crear otro — devuelve
+            // el existente tal cual. Varios pomodoros DISTINTOS sí pueden
+            // coexistir (esa es la función de "principal"/⭐), pero repetir
+            // el mismo no debe apilar registros nuevos.
+            $existing = $wpdb->get_row( $wpdb->prepare(
+                "SELECT * FROM $table_timers
+                 WHERE user_id = %d AND type = 'pomodoro' AND pomodoro_id = %d
+                   AND state IN ('running','paused')
+                 ORDER BY id DESC LIMIT 1",
+                $user_id, $id
+            ));
+            if ( $existing ) {
+                return array(
+                    'success' => true,
+                    'message' => 'Ya estaba en marcha',
+                    'data'    => array(
+                        'timer_id' => (int) $existing->id,
+                        'phase'    => $existing->phase ?: 'work',
+                        'duration' => (int) $existing->duration,
+                    ),
+                );
+            }
+
             $duration = tomatito_phase_duration( $pomodoro, 'work' );
 
             $wpdb->insert( $table_timers, array(

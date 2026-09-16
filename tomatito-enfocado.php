@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Tomatito Enfocado
  * Description: Migração de compatibilidade do Tomatito Enfocado a partir dos snippets atuais. Mantém a lógica e a ordem de carregamento dos snippets.
- * Version: 1.0.59
+ * Version: 1.0.60
  * Author: Tomatito Enfocado
  * Requires at least: 6.0
  * Requires PHP: 8.2
