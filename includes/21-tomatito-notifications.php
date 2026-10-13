@@ -509,7 +509,11 @@ window.tomatitoAlert = function(message, options) {
             } catch (e) {}
         }
 
-        function detenerAlarma(chave) {
+        // 'sincronizar' = true cuando el usuario pulsa "Detener" aquí: se avisa
+        // al servidor para que el móvil (y otras pestañas/dispositivos) también
+        // la detengan. Con false solo se aplica en local (la detuvo otro
+        // dispositivo y llegó como 'detenida' desde /alarmas/upcoming).
+        function detenerAlarma(chave, sincronizar) {
             delete alarmasPendentes[chave];
             alarmasDetenidas[chave] = true;
             guardarAlarmasPendentes();
@@ -518,6 +522,15 @@ window.tomatitoAlert = function(message, options) {
 
             var aviso = document.querySelector('[data-tomatito-alarma="' + chave + '"]');
             if (aviso && aviso.parentNode) aviso.parentNode.removeChild(aviso);
+
+            if (sincronizar !== false) {
+                var alarmaId = String(chave).split('_')[0];
+                fetch('/wp-json/tomatito/v1/alarmas/' + alarmaId + '/detener', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'X-WP-Nonce': (window.wpApiSettings ? wpApiSettings.nonce : '') }
+                }).catch(function() {});
+            }
         }
 
         function mostrarAvisoAlarma(chave, name, time, reminderMinutes) {
@@ -544,7 +557,7 @@ window.tomatitoAlert = function(message, options) {
             var stopButton = document.createElement('button');
             stopButton.className = 'tomatito-confirm-ok';
             stopButton.textContent = 'Detener alarma';
-            stopButton.addEventListener('click', function() { detenerAlarma(chave); });
+            stopButton.addEventListener('click', function() { detenerAlarma(chave, true); });
 
             actions.appendChild(stopButton);
             box.appendChild(title);
@@ -712,6 +725,16 @@ async function vigiarAlarmasGlobal() {
             var parts = time.split(':');
             var alarmMinutes = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
             var diff = nowMinutes - alarmMinutes;
+
+            // La detuvo otro dispositivo (p.ej. el móvil): se aplica aquí
+            // también — cierra el aviso y calla la sirena.
+            if (alarma.detenida) {
+                var chaveDetenida = id + '_' + hojeStr + '_' + time;
+                if (!alarmasDetenidas[chaveDetenida]) {
+                    detenerAlarma(chaveDetenida, false);
+                }
+                return;
+            }
 
             // Ao chegar no horário, o alarme permanece pendente até o utilizador
             // escolher "Detener alarma". Enquanto estiver pendente, é repetido

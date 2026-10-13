@@ -320,6 +320,41 @@ add_action('rest_api_init', function () {
         },
     ));
 	
+    // ─── DETENER (sincroniza "Detener alarma" entre web y móvil) ──────────────
+    // Antes el "detenida" vivía solo en el localStorage de cada navegador, así
+    // que detenerla en un dispositivo no la paraba en los demás. Se guarda el
+    // instante en que se detuvo (user_meta); /alarmas/upcoming devuelve
+    // 'detenida' = true mientras ese instante sea posterior a la hora de hoy
+    // de la alarma, y mañana vuelve a sonar sola.
+    register_rest_route('tomatito/v1', '/alarmas/(?P<id>\d+)/detener', array(
+        'methods'             => 'POST',
+        'permission_callback' => '__return_true',
+        'callback'            => function ( WP_REST_Request $request ) use ($table) {
+            global $wpdb;
+            $user_id = get_current_user_id();
+            if ( ! $user_id ) {
+                return array( 'success' => false, 'message' => 'No autorizado' );
+            }
+            $id = (int) $request->get_param('id');
+
+            $exists = $wpdb->get_var( $wpdb->prepare(
+                "SELECT id FROM $table WHERE id = %d AND user_id = %d", $id, $user_id
+            ));
+            if ( ! $exists ) {
+                return array( 'success' => false, 'message' => 'Alarma no encontrada' );
+            }
+
+            $map = get_user_meta( $user_id, 'tomatito_alarmas_detenidas', true );
+            if ( ! is_array( $map ) ) {
+                $map = array();
+            }
+            $map[ $id ] = time();
+            update_user_meta( $user_id, 'tomatito_alarmas_detenidas', $map );
+
+            return array( 'success' => true, 'message' => 'Alarma detenida' );
+        },
+    ));
+
     register_rest_route('tomatito/v1', '/alarmas/upcoming', array(
         'methods'             => 'GET',
         'permission_callback' => '__return_true',
@@ -352,9 +387,20 @@ add_action('rest_api_init', function () {
 
             $output = array();
 
+            $detenidas = get_user_meta( $user_id, 'tomatito_alarmas_detenidas', true );
+            if ( ! is_array( $detenidas ) ) {
+                $detenidas = array();
+            }
+
             foreach ( $rows as $row ) {
 
                 $hhmm = substr( $row['time'], 0, 5 );
+
+                // ¿Ya se detuvo la ocurrencia de HOY? Se compara el instante en
+                // que se detuvo con la hora de hoy de esta alarma (zona del sitio).
+                $ocurrencia = ( new DateTime( $today . ' ' . $row['time'], wp_timezone() ) )->getTimestamp();
+                $detenida   = isset( $detenidas[ (int) $row['id'] ] )
+                    && (int) $detenidas[ (int) $row['id'] ] >= $ocurrencia;
 
 				$output[] = array(
 					'id'               => (int) $row['id'],
@@ -362,6 +408,7 @@ add_action('rest_api_init', function () {
 					'time'             => $hhmm,
 					'sound'            => $row['sound'],
 					'reminder_minutes' => (int) ( $row['reminder_minutes'] ?: 5 ),
+					'detenida'         => $detenida,
 				);
 					}
 
