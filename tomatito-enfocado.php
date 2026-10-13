@@ -58,7 +58,8 @@ $tomatito_enfocado_files = array(
     '30-habilitar-application-passwords.php',
     '31-tomatito-mi-perfil.php',
     '32-tomatito-anuncios.php',
-    '33-tomatito-api-cuenta-movil.php'
+    '33-tomatito-api-cuenta-movil.php',
+    '34-tomatito-api-mi-perfil-movil.php'
 );
 
 foreach ($tomatito_enfocado_files as $tomatito_file) {

@@ -25,11 +25,18 @@ add_action('rest_api_init', function () {
                 : array( 'status' => 'No disponible' );
             $omkrom_connected  = in_array( $license['status'] ?? '', array( 'Activa', 'Periodo de prueba' ), true );
 
+            // Foto propia (subida desde "Mi perfil" en el móvil) tiene prioridad;
+            // si no hay, cae al Gravatar de siempre — misma función que usa WP
+            // en cualquier otro lado para mostrar el avatar del usuario.
+            $custom_avatar = get_user_meta( $user_id, 'tomatito_avatar_url', true );
+            $avatar_url    = $custom_avatar ?: get_avatar_url( $user_id, array( 'size' => 200 ) );
+
             return array(
                 'success' => true,
                 'data'    => array(
                     'email'               => $user ? $user->user_email : '',
                     'display_name'        => $user ? $user->display_name : '',
+                    'avatar_url'          => $avatar_url,
                     'omkrom_connected'    => $omkrom_connected,
                     'omkrom_status_label' => $license['status'] ?? 'No disponible',
                 ),
