@@ -81,7 +81,7 @@ add_action('rest_api_init', function () {
             // Tema
             if ( isset( $body['tema'] ) ) {
                 $tema = sanitize_text_field( $body['tema'] );
-                if ( in_array( $tema, array( 'claro', 'oscuro' ), true ) ) {
+                if ( in_array( $tema, array( 'claro', 'oscuro', 'auto' ), true ) ) {
                     update_user_meta( $user_id, 'tomatito_tema', $tema );
                 }
             }

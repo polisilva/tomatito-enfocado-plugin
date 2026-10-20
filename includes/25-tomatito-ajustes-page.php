@@ -448,11 +448,12 @@ function tomatito_ajustes_shortcode() {
                     <div class="ajustes-row">
                         <div class="label">
                             <span class="title">Tema</span>
-                            <span class="desc">Claro u oscuro</span>
+                            <span class="desc">Claro, oscuro o automático (según tu dispositivo)</span>
                         </div>
                         <select id="field-tema">
                             <option value="claro">Claro</option>
                             <option value="oscuro">Oscuro</option>
+                            <option value="auto">Automático</option>
                         </select>
                     </div>
                 </div>
@@ -817,6 +818,9 @@ function tomatito_ajustes_shortcode() {
     // ============================================
 
     function applyTheme( tema ) {
+        if ( tema === 'auto' ) {
+            tema = ( window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ) ? 'oscuro' : 'claro';
+        }
         if ( tema === 'oscuro' ) {
             document.body.classList.add('tomatito-dark');
         } else {
